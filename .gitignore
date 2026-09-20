@@ -1,0 +1,10 @@
+# kernel module build byproducts (reproducible via make)
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+Module.symvers
+modules.order
+.module-common.o
+.tmp_*/
