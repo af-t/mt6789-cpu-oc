@@ -88,8 +88,18 @@ echo 0 > /proc/sys/kernel/kptr_restrict
 trap 'echo "$KPTR" > /proc/sys/kernel/kptr_restrict' EXIT
 
 kaddr() {
-	cat /proc/kallsyms 2>/dev/null | awk -v s="$1" -v m="[$2]" \
-		'$3 == s && $4 == m { print "0x" $1; exit }'
+	sym=$1
+	mod=${2:-}
+	addr=
+	if [ -n "$mod" ]; then
+		addr=$(cat /proc/kallsyms 2>/dev/null | awk -v s="$sym" -v m="[$mod]" \
+			'$3 == s && $4 == m { print "0x" $1; exit }')
+	fi
+	if [ -z "$addr" ]; then
+		addr=$(cat /proc/kallsyms 2>/dev/null | awk -v s="$sym" \
+			'$3 == s { print "0x" $1; exit }')
+	fi
+	echo "$addr"
 }
 
 TOUCH_MAX_PTR=$(kaddr freq_max_request touch_boost) || true
@@ -107,9 +117,37 @@ case "$TOUCH_MAX_PTR $POWERHAL_MAX_PTR $FPSGO_MAX_PTR $FPSGO_CUR_PTR $FPSGO_RQ_P
   *0x0000000000000000*|"0 0 0 0 0") echo "addresses hidden, kptr_restrict stuck?"; exit 1;;
 esac
 
+# Drop all policies to their minimum frequency before loading module
+echo "Dropping CPU cores to minimum frequency..."
+for policy_dir in /sys/devices/system/cpu/cpufreq/policy*; do
+	[ -d "$policy_dir" ] || continue
+	min_freq=
+	if [ -r "$policy_dir/cpuinfo_min_freq" ]; then
+		min_freq=$(cat "$policy_dir/cpuinfo_min_freq")
+	elif [ -r "$policy_dir/scaling_min_freq" ]; then
+		min_freq=$(cat "$policy_dir/scaling_min_freq")
+	fi
+	if [ -n "$min_freq" ] && [ -w "$policy_dir/scaling_max_freq" ]; then
+		echo "$min_freq" > "$policy_dir/scaling_max_freq" 2>/dev/null || true
+	fi
+done
+
 dmesg -c > /dev/null 2>&1 || true
 load_module "$KO" touch_max_ptr="$TOUCH_MAX_PTR" powerhal_max_ptr="$POWERHAL_MAX_PTR" fpsgo_max_ptr="$FPSGO_MAX_PTR" fpsgo_cur_ptr="$FPSGO_CUR_PTR" fpsgo_rq_ptr="$FPSGO_RQ_PTR" drop_powerhal="$DROP_POWERHAL"
 dmesg -c | grep cpu-oc || true
+
+# Maximize scaling_max_freq to each policy's cpuinfo_max_freq after module load
+echo "Maximizing scaling_max_freq..."
+for policy_dir in /sys/devices/system/cpu/cpufreq/policy*; do
+	[ -d "$policy_dir" ] || continue
+	max_freq=
+	if [ -r "$policy_dir/cpuinfo_max_freq" ]; then
+		max_freq=$(cat "$policy_dir/cpuinfo_max_freq")
+	fi
+	if [ -n "$max_freq" ] && [ -w "$policy_dir/scaling_max_freq" ]; then
+		echo "$max_freq" > "$policy_dir/scaling_max_freq" 2>/dev/null || true
+	fi
+done
 
 for policy in 6 0; do
 	echo "--- policy$policy ---"

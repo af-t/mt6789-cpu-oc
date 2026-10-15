@@ -535,6 +535,9 @@ static int patch_one(struct cluster_patch *c)
 	ret = update_qos(c, policy, c->oc);
 	if (ret)
 		goto rollback;
+	ret = patch_lut_row(c, c->oc);
+	if (ret)
+		goto rollback;
 	WRITE_ONCE(c->patching, true);
 	up_write(&policy->rwsem);
 
@@ -547,11 +550,6 @@ static int patch_one(struct cluster_patch *c)
 		pr_warn("[cpu-oc] cpu%d: verify failed, keeping patches (ignore_verify)\n",
 			c->cpu);
 		ret = 0;
-	}
-	ret = patch_lut_row(c, c->oc);
-	if (ret) {
-		cpufreq_cpu_put(policy);
-		goto rollback_after_update;
 	}
 	WRITE_ONCE(c->patching, false);
 	WRITE_ONCE(c->done, true);

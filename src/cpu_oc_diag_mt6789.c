@@ -89,6 +89,8 @@ static void diag_lut_phys(void)
 		readl_relaxed(lut_map + 0x84),
 		readl_relaxed(lut_map + 0x88),
 		readl_relaxed(lut_map + 0x8c));
+	iounmap(lut_map);
+	lut_map = NULL;
 }
 
 static atomic_t trace_count = ATOMIC_INIT(0);
