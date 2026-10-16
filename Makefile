@@ -1,6 +1,7 @@
 obj-m += src/cpu_oc_mt6789.o
 obj-m += src/cpu_oc_diag_mt6789.o
 obj-m += src/cpu_oc_noop_mt6789.o
+obj-m += src/cpu_oc_emi_test.o
 
 KDIR ?= /lib/modules/$(shell uname -r)/build
 ifeq ($(wildcard $(KDIR)/Module.symvers),)
