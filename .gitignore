@@ -8,3 +8,6 @@ Module.symvers
 modules.order
 .module-common.o
 .tmp_*/
+__pycache__/
+*.pyc
+

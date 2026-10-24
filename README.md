@@ -77,9 +77,8 @@ Pick a variant, generate its baked targets, rebuild, and load by path
 
 ```sh
 python3 scripts/gen_table.py 2500 2300 > src/oc_targets.h
-make KDIR=/var/tmp/kernel-6.12-2025-09 ARCH=arm64 LLVM=1
-llvm-strip --strip-debug src/cpu_oc_mt6789.ko
-sh scripts/load-oc.sh src/cpu_oc_mt6789.ko
+sh scripts/build-local.sh
+python3 scripts/load.py src/cpu_oc_mt6789.ko
 cat /sys/devices/system/cpu/cpufreq/policy6/scaling_cur_freq
 cat /sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq
 ```
@@ -96,7 +95,7 @@ loaded when the refresh check fails (debug aid; not needed when all voters
 cooperate). Restore immediately with:
 
 ```sh
-sh scripts/load-oc.sh unload
+python3 scripts/load.py unload
 ```
 
 `rmmod` restores the table, cpuinfo, QoS votes, vendor requests, fpsgo cache,
@@ -106,9 +105,9 @@ to load.
 ## Read-only diagnostic
 
 ```sh
-TRACE_QOSUP=1 sh scripts/load-oc.sh diag
+python3 scripts/load.py diag
 dmesg | grep cpu-oc-diag
-sh scripts/load-oc.sh diag-unload
+python3 scripts/load.py diag-unload
 ```
 
 `TRACE_QOSUP=1` kprobes `freq_qos_update_request` callers; `READ_OPP=1`
@@ -218,7 +217,7 @@ the QoS effective value; targets are range-gated (`stock < oc <=
 stock + guard`) before anything is touched. Variants are generated
 (`scripts/gen_table.py <big_MHz> <little_MHz> > src/oc_targets.h`), baked
 at build time via `src/oc_profile.h`, and loaded by path
-(`sh scripts/load-oc.sh src/cpu_oc_mt6789.ko`) — no tuning numbers at
+(`python3 scripts/load.py src/cpu_oc_mt6789.ko`) — no tuning numbers at
 load time.
 
 ### 6. Porting to another device/kernel
