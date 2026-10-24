@@ -76,7 +76,7 @@ Pick a variant, generate its baked targets, rebuild, and load by path
 (tuning lives in the build, not in loader arguments):
 
 ```sh
-./tools/gen_table.py 2500 2300 > src/oc_targets.h
+python3 scripts/gen_table.py 2500 2300 > src/oc_targets.h
 make KDIR=/var/tmp/kernel-6.12-2025-09 ARCH=arm64 LLVM=1
 llvm-strip --strip-debug src/cpu_oc_mt6789.ko
 sh scripts/load-oc.sh src/cpu_oc_mt6789.ko
@@ -216,7 +216,7 @@ path — init aborts leave zero residue (proven by reload cycles). A
 `refresh_and_verify` step re-reads table head, cpuinfo, policy max, and
 the QoS effective value; targets are range-gated (`stock < oc <=
 stock + guard`) before anything is touched. Variants are generated
-(`tools/gen_table.py <big_MHz> <little_MHz> > src/oc_targets.h`), baked
+(`scripts/gen_table.py <big_MHz> <little_MHz> > src/oc_targets.h`), baked
 at build time via `src/oc_profile.h`, and loaded by path
 (`sh scripts/load-oc.sh src/cpu_oc_mt6789.ko`) — no tuning numbers at
 load time.
